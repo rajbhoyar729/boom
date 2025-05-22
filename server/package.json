@@ -9,6 +9,7 @@
     "build": "babel src -d dist"
   },
   "dependencies": {
+    "babel": "^6.23.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.37.0",
     "cors": "^2.8.5",

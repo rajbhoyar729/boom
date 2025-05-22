@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      babel:
+        specifier: ^6.23.0
+        version: 6.23.0
       bcryptjs:
         specifier: ^2.4.3
         version: 2.4.3
@@ -70,6 +73,11 @@ packages:
 
   array-flatten@1.1.1:
     resolution: {integrity: sha512-PCVAQswWemu6UdxsDFFX/+gVeYqKAod3D3UVm91jHwynguOwAvYPhx8nNlM++NqRcK6CxxpUafjmhIdKiHibqg==, tarball: https://registry.npmjs.org/array-flatten/-/array-flatten-1.1.1.tgz}
+
+  babel@6.23.0:
+    resolution: {integrity: sha512-ZDcCaI8Vlct8PJ3DvmyqUz+5X2Ylz3ZuuItBe/74yXosk2dwyVo/aN7MCJ8HJzhnnJ+6yP4o+lDgG9MBe91DLA==, tarball: https://registry.npmjs.org/babel/-/babel-6.23.0.tgz}
+    deprecated: In 6.x, the babel package has been deprecated in favor of babel-cli. Check https://opencollective.com/babel to support the Babel maintainers
+    hasBin: true
 
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==, tarball: https://registry.npmjs.org/balanced-match/-/balanced-match-1.0.2.tgz}
@@ -731,6 +739,8 @@ snapshots:
   append-field@1.0.0: {}
 
   array-flatten@1.1.1: {}
+
+  babel@6.23.0: {}
 
   balanced-match@1.0.2: {}
 
