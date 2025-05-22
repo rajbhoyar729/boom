@@ -27,7 +27,7 @@ A short-video viewing app with user authentication, video feed, and video upload
 
 ## Project Structure
 
-\`\`\`
+```
 boom-video-app/
 ├── app/                  # React Native frontend
 │   ├── src/              # Source code
@@ -49,7 +49,7 @@ boom-video-app/
 │   └── ...               # Server config files
 │
 └── README.md             # Project documentation
-\`\`\`
+```
 
 ## Setup Instructions
 
@@ -62,46 +62,46 @@ boom-video-app/
 ### Backend Setup
 
 1. Navigate to the server directory:
-   \`\`\`
+2. ```
    cd server
-   \`\`\`
+   ```
 
-2. Install dependencies:
-   \`\`\`
+3. Install dependencies:
+   ```
    npm install
-   \`\`\`
+   ```
 
-3. Create a `.env` file based on `.env.example` and fill in your credentials:
-   \`\`\`
+4. Create a `.env` file based on `.env.example` and fill in your credentials:
+  ```
    cp .env.example .env
-   \`\`\`
+   ```
 
-4. Start the server:
-   \`\`\`
+5. Start the server:
+   ```
    npm run dev
-   \`\`\`
+   ```
 
 ### Frontend Setup
 
 1. Navigate to the app directory:
-   \`\`\`
+   ```
    cd app
-   \`\`\`
+   ```
 
 2. Install dependencies:
-   \`\`\`
+   ```
    npm install
-   \`\`\`
+   ```
 
 3. Start the Expo development server:
-   \`\`\`
+   ```
    npm start
-   \`\`\`
+   ```
 
 4. Run on Android:
-   \`\`\`
+   ```
    npm run android
-   \`\`\`
+   ```
 
 ## API Endpoints
 
