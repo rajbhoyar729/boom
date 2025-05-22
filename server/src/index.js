@@ -35,6 +35,10 @@ mongoose
   .catch((err) => console.error("MongoDB connection error:", err))
 
 // Routes
+app.get("/", (req, res) => {
+  res.send("Hello this is the home page for boom service")
+})
+
 app.use("/api/auth", authRoutes)
 app.use("/api/videos", videoRoutes)
 app.use("/api/users", userRoutes)
