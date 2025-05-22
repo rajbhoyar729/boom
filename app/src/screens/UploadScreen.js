@@ -34,7 +34,8 @@ const UploadScreen = ({ navigation }) => {
 
       if (!result.canceled) {
         setVideo(result.assets[0].uri)
-        // Generate thumbnail (in a real app, this would be done on the server)
+        // NOTE: In a real app, you would generate or pick a proper thumbnail image here.
+        // Currently, we are just using the video URI as a placeholder for the thumbnail state.
         setThumbnail(result.assets[0].uri)
       }
     } catch (error) {
@@ -43,8 +44,8 @@ const UploadScreen = ({ navigation }) => {
   }
 
   const uploadVideo = async () => {
-    if (!video || !title.trim()) {
-      Alert.alert("Error", "Please select a video and add a title")
+    if (!video || !title.trim() || !thumbnail) {
+      Alert.alert("Error", "Please select a video, add a title, and ensure thumbnail is available")
       return
     }
 
@@ -64,6 +65,16 @@ const UploadScreen = ({ navigation }) => {
         name: videoName,
         type: videoType,
       })
+
+      // Add thumbnail file
+      const thumbnailName = thumbnail.split("/").pop()
+      const thumbnailType = "image/" + (thumbnailName.split(".").pop() || "jpeg"); // Default to jpeg if extension is missing
+
+      formData.append("thumbnail", {
+        uri: thumbnail,
+        name: thumbnailName,
+        type: thumbnailType,
+      });
 
       // Upload to server
       await api.post("/upload", formData, {

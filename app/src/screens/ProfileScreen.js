@@ -6,12 +6,14 @@ import { Ionicons } from "@expo/vector-icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import api from "../services/api"
 import { useNavigation } from "@react-navigation/native"
+import { useToast } from "../context/ToastContext"
 
 const ProfileScreen = () => {
   const [user, setUser] = useState(null)
   const [videos, setVideos] = useState([])
   const [loading, setLoading] = useState(true)
   const navigation = useNavigation()
+  const { showToast } = useToast()
 
   useEffect(() => {
     fetchUserData()
@@ -22,19 +24,51 @@ const ProfileScreen = () => {
       setLoading(true)
       const userId = await AsyncStorage.getItem("userId")
 
-      // Fetch user profile
-      const userResponse = await api.get(`/users/${userId}`)
-      setUser(userResponse.data)
+      const [userResponse, videosResponse] = await Promise.all([
+        api.get(`/users/${userId}`),
+        api.get(`/users/${userId}/videos`)
+      ])
 
-      // Fetch user videos
-      const videosResponse = await api.get(`/users/${userId}/videos`)
+      setUser(userResponse.data)
       setVideos(videosResponse.data)
     } catch (error) {
-      console.error("Error fetching user data:", error)
-      Alert.alert("Error", "Failed to load profile data")
+      showToast(error.message || "Failed to load profile data")
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleDeleteVideo = async (videoId) => {
+    try {
+      await api.delete(`/videos/${videoId}`)
+      setVideos(videos.filter(video => video._id !== videoId))
+      showToast("Video deleted successfully", "success")
+    } catch (error) {
+      showToast(error.message || "Failed to delete video")
+    }
+  }
+
+  const handleEditVideo = async (videoId, newTitle) => {
+    try {
+      const response = await api.patch(`/videos/${videoId}`, { title: newTitle })
+      setVideos(videos.map(video => 
+        video._id === videoId ? { ...video, title: newTitle } : video
+      ))
+      showToast("Video updated successfully", "success")
+    } catch (error) {
+      showToast(error.message || "Failed to update video")
+    }
+  }
+
+  const confirmDelete = (videoId) => {
+    Alert.alert(
+      "Delete Video",
+      "Are you sure you want to delete this video?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => handleDeleteVideo(videoId) }
+      ]
+    )
   }
 
   const handleLogout = async () => {
@@ -53,15 +87,37 @@ const ProfileScreen = () => {
   }
 
   const renderVideoItem = ({ item }) => (
-    <TouchableOpacity style={styles.videoItem} onPress={() => navigation.navigate("Home")}>
-      <Image source={{ uri: item.thumbnailUrl || "https://via.placeholder.com/150" }} style={styles.thumbnail} />
+    <View style={styles.videoItem}>
+      <TouchableOpacity style={styles.thumbnail} onPress={() => navigation.navigate("VideoPlayer", { videoId: item._id })}>
+        <Image source={{ uri: item.thumbnailUrl || "https://via.placeholder.com/150" }} style={styles.thumbnailImage} />
+      </TouchableOpacity>
+      
       <View style={styles.videoItemInfo}>
         <Text style={styles.videoItemTitle} numberOfLines={1}>
           {item.title}
         </Text>
         <Text style={styles.videoItemStats}>{item.likes || 0} likes</Text>
+        
+        <View style={styles.videoActions}>
+          <TouchableOpacity 
+            style={styles.actionButton} 
+            onPress={() => Alert.prompt("Edit Title", "", [
+              { text: "Cancel", style: "cancel" },
+              { text: "Save", onPress: (newTitle) => handleEditVideo(item._id, newTitle) }
+            ], "plain-text", item.title)}
+          >
+            <Ionicons name="pencil" size={20} color="#666" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.deleteButton]} 
+            onPress={() => confirmDelete(item._id)}
+          >
+            <Ionicons name="trash" size={20} color="#FF4D4D" />
+          </TouchableOpacity>
+        </View>
       </View>
-    </TouchableOpacity>
+    </View>
   )
 
   if (loading) {
@@ -86,7 +142,7 @@ const ProfileScreen = () => {
           <Text style={styles.profileInitial}>{user?.email?.charAt(0).toUpperCase() || "U"}</Text>
         </View>
 
-        <Text style={styles.username}>{user?.email?.split("@")[0] || "User"}</Text>
+        <Text style={styles.username}>{user?.username || "User"}</Text> {/* Display username */}
         <Text style={styles.email}>{user?.email || "user@example.com"}</Text>
 
         <View style={styles.statsContainer}>
@@ -223,6 +279,12 @@ const styles = StyleSheet.create({
   thumbnail: {
     width: 100,
     height: 70,
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  thumbnailImage: {
+    width: "100%",
+    height: "100%",
   },
   videoItemInfo: {
     flex: 1,
@@ -238,6 +300,17 @@ const styles = StyleSheet.create({
   videoItemStats: {
     fontSize: 12,
     color: "#666",
+  },
+  videoActions: {
+    flexDirection: "row",
+    marginTop: 5,
+  },
+  actionButton: {
+    padding: 5,
+    marginRight: 10,
+  },
+  deleteButton: {
+    marginLeft: "auto",
   },
   emptyState: {
     flex: 1,

@@ -48,3 +48,12 @@ next-env.d.ts
 # misc
 .DS_Store
 Thumbs.db
+
+# expo
+app/.expo/web/
+
+# idea
+app/.idea/
+
+# android
+app/android/

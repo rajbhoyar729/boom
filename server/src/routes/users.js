@@ -16,7 +16,7 @@ router.get("/:id", async (req, res) => {
     res.json(user)
   } catch (error) {
     console.error("Get user error:", error)
-    res.status(500).json({ message: "Server error" })
+    res.status(500).json({ message: "Server error fetching user profile" })
   }
 })
 
@@ -28,7 +28,7 @@ router.get("/:id/videos", async (req, res) => {
     res.json(videos)
   } catch (error) {
     console.error("Get user videos error:", error)
-    res.status(500).json({ message: "Server error" })
+    res.status(500).json({ message: "Server error fetching user videos" })
   }
 })
 
@@ -39,6 +39,10 @@ router.put("/profile", auth, async (req, res) => {
 
     // Update user
     const user = await User.findById(req.userId)
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     if (username) user.username = username
 
@@ -51,7 +55,11 @@ router.put("/profile", auth, async (req, res) => {
     })
   } catch (error) {
     console.error("Update profile error:", error)
-    res.status(500).json({ message: "Server error" })
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(val => val.message);
+      return res.status(400).json({ message: messages.join(', ') });
+    }
+    res.status(500).json({ message: "Server error updating profile" })
   }
 })
 

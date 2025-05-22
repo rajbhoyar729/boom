@@ -3,7 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 
 // Create axios instance
 const api = axios.create({
-  baseURL: "http://10.0.2.2:5000/api", // Android emulator points to localhost
+  baseURL: "https://boom-5hzk.onrender.com/api", // Deployed backend URL
   // For physical device testing, use your computer's IP address
   // baseURL: 'http://192.168.1.x:5000/api',
   timeout: 30000, // 30 seconds timeout for video uploads
@@ -25,27 +25,44 @@ api.interceptors.request.use(
 
 // Add a response interceptor to handle token expiration
 api.interceptors.response.use(
-  (response) => {
-    return response
-  },
+  (response) => response,
   async (error) => {
     const originalRequest = error.config
 
-    // If the error is 401 and we haven't retried yet
+    // Handle token expiration
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
-
-      // Clear token and redirect to login
       await AsyncStorage.removeItem("token")
       await AsyncStorage.removeItem("userId")
-
-      // We can't directly navigate here, so we'll need to handle this in the UI
-      // by checking for 401 errors in the components
-
-      return Promise.reject(error)
+      // We'll handle navigation in the components
+      return Promise.reject({
+        type: "auth",
+        message: "Session expired. Please login again.",
+      })
     }
 
-    return Promise.reject(error)
+    // Handle other common errors
+    if (error.response) {
+      // Server responded with error
+      const message = error.response.data?.message || "Something went wrong"
+      return Promise.reject({
+        type: "server",
+        status: error.response.status,
+        message,
+      })
+    } else if (error.request) {
+      // Request made but no response
+      return Promise.reject({
+        type: "network",
+        message: "Network error. Please check your connection.",
+      })
+    } else {
+      // Error in request configuration
+      return Promise.reject({
+        type: "client",
+        message: "Failed to make request.",
+      })
+    }
   },
 )
 

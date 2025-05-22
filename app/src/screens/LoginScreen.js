@@ -20,12 +20,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 const LoginScreen = () => {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [username, setUsername] = useState("") // Add username state
   const [isLogin, setIsLogin] = useState(true)
   const [loading, setLoading] = useState(false)
   const navigation = useNavigation()
 
   const handleAuth = async () => {
-    if (!email || !password) {
+    if (!email || !password || (!isLogin && !username)) {
+      // Add username validation for registration
       Alert.alert("Error", "Please fill in all fields")
       return
     }
@@ -33,7 +35,8 @@ const LoginScreen = () => {
     try {
       setLoading(true)
       const endpoint = isLogin ? "login" : "register"
-      const response = await api.post(`/auth/${endpoint}`, { email, password })
+      const payload = isLogin ? { email, password } : { email, password, username } // Include username in registration payload
+      const response = await api.post(`/auth/${endpoint}`, payload)
 
       // Store the token
       await AsyncStorage.setItem("token", response.data.token)
@@ -42,6 +45,7 @@ const LoginScreen = () => {
       // Reset form
       setEmail("")
       setPassword("")
+      setUsername("") // Clear username field
 
       // Navigate to home
       navigation.reset({
@@ -66,6 +70,17 @@ const LoginScreen = () => {
 
         <View style={styles.formContainer}>
           <Text style={styles.title}>{isLogin ? "Login" : "Create Account"}</Text>
+
+          {!isLogin && (
+            <TextInput
+              style={styles.input}
+              placeholder="Username"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+              marginBottom={15}
+            />
+          )}
 
           <TextInput
             style={styles.input}
