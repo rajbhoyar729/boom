@@ -36,7 +36,7 @@ mongoose
 
 // Routes
 app.get("/", (req, res) => {
-  res.send.json("Hello this is the home page for boom service")
+  res.send.json({msg:"Hello this is the home page for boom service"})
 })
 
 app.use("/api/auth", authRoutes)
