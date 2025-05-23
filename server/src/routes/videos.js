@@ -15,7 +15,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
-// Configure multer for video upload
+// Configure multer for file upload
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, "../../uploads")
@@ -32,60 +32,85 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit
+  limits: { fileSize: 150 * 1024 * 1024 }, // Increased limit to 150MB for video and thumbnail
   fileFilter: (req, file, cb) => {
-    const filetypes = /mp4|mov|avi|wmv|flv|mkv/
-    const mimetype = filetypes.test(file.mimetype)
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase())
-
-    if (mimetype && extname) {
-      return cb(null, true)
+    // Allow both video and image file types based on fieldname
+    if (file.fieldname === "video") {
+      const filetypes = /mp4|mov|avi|wmv|flv|mkv/
+      const mimetype = filetypes.test(file.mimetype)
+      const extname = filetypes.test(path.extname(file.originalname).toLowerCase())
+      if (mimetype && extname) {
+        return cb(null, true)
+      }
+      cb(new Error("Only video files are allowed for video field"))
+    } else if (file.fieldname === "thumbnail") {
+      const filetypes = /jpeg|jpg|png/
+      const mimetype = filetypes.test(file.mimetype)
+      const extname = filetypes.test(path.extname(file.originalname).toLowerCase())
+      if (mimetype && extname) {
+        return cb(null, true)
+      }
+      cb(new Error("Only image files are allowed for thumbnail field"))
+    } else {
+      cb(new Error("Unexpected field"))
     }
-    cb(new Error("Only video files are allowed"))
   },
 })
 
-// Upload video
-router.post("/upload", auth, upload.single("video"), async (req, res) => {
+// Upload video and thumbnail
+router.post("/upload", auth, upload.fields([{ name: 'video', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }]), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: "No video file uploaded" })
+    const videoFile = req.files['video'] ? req.files['video'][0] : null;
+    const thumbnailFile = req.files['thumbnail'] ? req.files['thumbnail'][0] : null;
+    const { title, description } = req.body; // Extract description from req.body
+
+    if (!videoFile || !thumbnailFile || !title || !description) { // Add description validation
+      // Clean up uploaded files if any
+      if (videoFile && fs.existsSync(videoFile.path)) fs.unlinkSync(videoFile.path);
+      if (thumbnailFile && fs.existsSync(thumbnailFile.path)) fs.unlinkSync(thumbnailFile.path);
+      return res.status(400).json({ message: "Video file, thumbnail file, title, and description are required" });
     }
 
-    const { title } = req.body
-    if (!title) {
-      return res.status(400).json({ message: "Title is required" })
-    }
-
-    // Upload to Cloudinary
-    const result = await cloudinary.uploader.upload(req.file.path, {
+    // Upload video to Cloudinary
+    const videoResult = await cloudinary.uploader.upload(videoFile.path, {
       resource_type: "video",
       folder: "boom-videos",
-    })
+    });
+
+    // Upload thumbnail to Cloudinary
+    const thumbnailResult = await cloudinary.uploader.upload(thumbnailFile.path, {
+      resource_type: "image",
+      folder: "boom-videos/thumbnails", // Optional: store thumbnails in a separate folder
+    });
 
     // Create video record
     const video = new Video({
-      title,
-      videoUrl: result.secure_url,
-      thumbnailUrl: result.secure_url.replace(/\.[^/.]+$/, ".jpg"), // Cloudinary auto-generates thumbnails
+      title:req.body.title,
+      description: req.body.description, // Include description in the video document
+      videoid: videoResult.public_id, // Store Cloudinary video public ID
+      videoUrl: videoResult.secure_url,
+      thumbnailid: thumbnailResult.public_id, // Store Cloudinary thumbnail public ID
+      thumbnailUrl: thumbnailResult.secure_url,
       uploader: req.userId,
-    })
+    });
 
-    await video.save()
+    await video.save();
 
-    // Delete local file after upload
-    fs.unlinkSync(req.file.path)
+    // Delete local files after upload
+    fs.unlinkSync(videoFile.path);
+    fs.unlinkSync(thumbnailFile.path);
 
-    res.status(201).json(video)
+    res.status(201).json(video);
   } catch (error) {
-    console.error("Video upload error:", error)
+    console.error("Video upload error:", error);
 
-    // Clean up local file if it exists
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path)
-    }
+    // Clean up local files if they exist
+    const videoFile = req.files && req.files['video'] ? req.files['video'][0] : null;
+    const thumbnailFile = req.files && req.files['thumbnail'] ? req.files['thumbnail'][0] : null;
+    if (videoFile && fs.existsSync(videoFile.path)) fs.unlinkSync(videoFile.path);
+    if (thumbnailFile && fs.existsSync(thumbnailFile.path)) fs.unlinkSync(thumbnailFile.path);
 
-    res.status(500).json({ message: "Failed to upload video" })
+    res.status(500).json({ message: "Failed to upload video" });
   }
 })
 
