@@ -60,7 +60,9 @@ const upload = multer({
 // Upload video and thumbnail
 router.post("/upload", auth, upload.fields([{ name: 'video', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }]), async (req, res) => {
   let uploadedFiles = { video: null, thumbnail: null };
-  
+  let videoResult = null; // Declare videoResult here
+  let thumbnailResult = null; // Declare thumbnailResult here
+
   try {
     // Validate request
     if (!req.files) {
@@ -80,7 +82,7 @@ router.post("/upload", auth, upload.fields([{ name: 'video', maxCount: 1 }, { na
 
     try {
       // Upload video to Cloudinary
-      const videoResult = await cloudinary.uploader.upload(videoFile.path, {
+      videoResult = await cloudinary.uploader.upload(videoFile.path, { // Assign to the outer scoped variable
         resource_type: "video",
         folder: "boom-videos",
         chunked: true, // Enable chunked uploads
@@ -89,7 +91,7 @@ router.post("/upload", auth, upload.fields([{ name: 'video', maxCount: 1 }, { na
       uploadedFiles.video = videoResult;
 
       // Upload thumbnail to Cloudinary
-      const thumbnailResult = await cloudinary.uploader.upload(thumbnailFile.path, {
+      thumbnailResult = await cloudinary.uploader.upload(thumbnailFile.path, { // Assign to the outer scoped variable
         resource_type: "image",
         folder: "boom-videos/thumbnails",
       });
@@ -106,6 +108,7 @@ router.post("/upload", auth, upload.fields([{ name: 'video', maxCount: 1 }, { na
     }
 
     // Create video record
+    console.log("req.userId before creating Video:", req.userId);
     const video = new Video({
       title:req.body.title,
       description: req.body.description, // Include description in the video document

@@ -10,7 +10,9 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ message: "No authentication token, access denied" })
     }
 
-    const token = authHeader.replace("Bearer ", "")
+    const token = req.headers.authorization.split(' ')[1];
+    console.log("Received Token in Auth Middleware:", token);
+    console.log("JWT Secret in Auth Middleware:", process.env.JWT_SECRET);
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
