@@ -28,8 +28,9 @@ router.post("/register", upload.none(), async (req, res) => { // Use upload.none
     const user = new User({ email, password, username }); // Include username in user creation
     await user.save();
 
+
     // Generate JWT token
-    console.log("JWT Secret used for signing (Register):", process.env.JWT_SECRET);
+    // Debug logs removed
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
     res.status(201).json({
@@ -69,8 +70,9 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" })
     }
 
+
     // Generate JWT token
-    console.log("JWT Secret used for signing (Login):", process.env.JWT_SECRET);
+    // Debug logs removed
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" })
 
     res.json({
